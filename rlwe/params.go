@@ -30,7 +30,7 @@ const DefaultSigma = 3.2
 // The j-th ring automorphism takes the root zeta to zeta^(5j).
 const GaloisGen uint64 = 5
 
-// ParametersLiteral is a literal representation of BFV parameters.  It has public
+// ParametersLiteral is a literal representation of RLWE parameters. It has public
 // fields and is used to express unchecked user-defined parameters literally into
 // Go programs. The NewParametersFromLiteral function is used to generate the actual
 // checked parameters from the literal representation.
@@ -402,7 +402,7 @@ func (p *Parameters) UnmarshalBinary(data []byte) error {
 	return err
 }
 
-// MarshalBinarySize returns the length of the []byte encoding of the reciever.
+// MarshalBinarySize returns the length of the []byte encoding of the receiver.
 func (p Parameters) MarshalBinarySize() int {
 	return 11 + (len(p.qi)+len(p.pi))<<3
 }

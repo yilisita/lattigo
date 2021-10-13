@@ -502,7 +502,7 @@ func testE2SProtocol(testCtx *testContext, t *testing.T) {
 		var minLevel, logBound int
 		var ok bool
 		if minLevel, logBound, ok = GetMinimumLevelForBootstrapping(128, params.Scale(), parties, params.Q()); ok != true {
-			t.Skip("Not enough levels to ensure correcness and 128 security")
+			t.Skip("Not enough levels to ensure correctness and 128 bit security")
 		}
 
 		type Party struct {
@@ -530,7 +530,7 @@ func testE2SProtocol(testCtx *testContext, t *testing.T) {
 		}
 
 		if testCtx.params.MaxLevel() < minLevel {
-			t.Skip("Not enough levels to ensure correcness and 128 security")
+			t.Skip("Not enough levels to ensure correctness and 128 bit security")
 		}
 
 		for i, p := range P {
@@ -593,7 +593,7 @@ func testRefresh(testCtx *testContext, t *testing.T) {
 		var minLevel, logBound int
 		var ok bool
 		if minLevel, logBound, ok = GetMinimumLevelForBootstrapping(128, params.Scale(), parties, params.Q()); ok != true {
-			t.Skip("Not enough levels to ensure correcness and 128 security")
+			t.Skip("Not enough levels to ensure correctness and 128 bit security")
 		}
 
 		type Party struct {
@@ -648,7 +648,7 @@ func testRefreshAndTransform(testCtx *testContext, t *testing.T) {
 		var minLevel, logBound int
 		var ok bool
 		if minLevel, logBound, ok = GetMinimumLevelForBootstrapping(128, params.Scale(), parties, params.Q()); ok != true {
-			t.Skip("Not enough levels to ensure correcness and 128 security")
+			t.Skip("Not enough levels to ensure correctness and 128 bit security")
 		}
 
 		type Party struct {
@@ -709,7 +709,7 @@ func testMarshalling(testCtx *testContext, t *testing.T) {
 		var minLevel, logBound int
 		var ok bool
 		if minLevel, logBound, ok = GetMinimumLevelForBootstrapping(128, params.Scale(), parties, params.Q()); ok != true {
-			t.Skip("Not enough levels to ensure correcness and 128 security")
+			t.Skip("Not enough levels to ensure correctness and 128 bit security")
 		}
 
 		ciphertext := ckks.NewCiphertext(params, 1, minLevel, params.Scale())
@@ -739,13 +739,13 @@ func testMarshalling(testCtx *testContext, t *testing.T) {
 
 		for i, r := range refreshshare.e2sShare.Value.Coeffs {
 			if !utils.EqualSliceUint64(resRefreshShare.e2sShare.Value.Coeffs[i], r) {
-				t.Fatal("Resulting of marshalling not the same as original : RefreshShare")
+				t.Fatal("Resulting of marshalling not the same as original: RefreshShare")
 			}
 
 		}
 		for i, r := range refreshshare.s2eShare.Value.Coeffs {
 			if !utils.EqualSliceUint64(resRefreshShare.s2eShare.Value.Coeffs[i], r) {
-				t.Fatal("Resulting of marshalling not the same as original : RefreshShare")
+				t.Fatal("Resulting of marshalling not the same as original: RefreshShare")
 			}
 
 		}

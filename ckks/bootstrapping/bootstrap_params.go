@@ -111,7 +111,7 @@ func (p *Parameters) RotationsForBootstrapping(LogN, LogSlots int) (rotations []
 }
 
 // DefaultCKKSParameters are default parameters for the bootstrapping.
-// To be used in conjonction with DefaultParameters.
+// To be used in conjunction with DefaultParameters.
 var DefaultCKKSParameters = []ckks.ParametersLiteral{
 	{
 		LogN:     16,

@@ -47,7 +47,7 @@ type skEncryptor struct {
 	sk *SecretKey
 }
 
-// NewEncryptor instatiates a new generic RLWE Encryptor. The key argument can
+// NewEncryptor instantiates a new generic RLWE Encryptor. The key argument can
 // be either a *rlwe.PublicKey or a *rlwe.SecretKey.
 func NewEncryptor(params Parameters, key interface{}) Encryptor {
 	switch key := key.(type) {
