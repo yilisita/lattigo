@@ -28,10 +28,21 @@ type bootstrapperBase struct {
 	ctsMatrices advanced.EncodingMatrix
 
 	q0OverMessageRatio float64
+
+	swkDtS *rlwe.SwitchingKey
+	swkStD *rlwe.SwitchingKey
+}
+
+// Key is a type for a CKKS bootstrapping key, wich regroups the necessary public relinearization
+// and rotation keys (i.e., an EvaluationKey).
+type Key struct {
+	rlwe.EvaluationKey
+	SwkDtS *rlwe.SwitchingKey
+	SwkStD *rlwe.SwitchingKey
 }
 
 // NewBootstrapper creates a new Bootstrapper.
-func NewBootstrapper(params ckks.Parameters, btpParams Parameters, btpKey rlwe.EvaluationKey) (btp *Bootstrapper, err error) {
+func NewBootstrapper(params ckks.Parameters, btpParams Parameters, btpKey Key) (btp *Bootstrapper, err error) {
 
 	if btpParams.EvalModParameters.SineType == advanced.Sin && btpParams.EvalModParameters.DoubleAngle != 0 {
 		return nil, fmt.Errorf("cannot use double angle formul for SineType = Sin -> must use SineType = Cos")
@@ -56,9 +67,27 @@ func NewBootstrapper(params ckks.Parameters, btpParams Parameters, btpKey rlwe.E
 		return nil, fmt.Errorf("invalid bootstrapping key: %w", err)
 	}
 
-	btp.Evaluator = advanced.NewEvaluator(params, btpKey)
+	btp.bootstrapperBase.swkDtS = btpKey.SwkDtS
+	btp.bootstrapperBase.swkStD = btpKey.SwkStD
+
+	btp.Evaluator = advanced.NewEvaluator(params, btpKey.EvaluationKey)
 
 	return
+}
+
+// GenEncapsulationSwitchingKeys generates the low level encapsulation switching keys for the bootstrapping.
+func (p *Parameters) GenEncapsulationSwitchingKeys(params ckks.Parameters, skDense *rlwe.SecretKey) (swkDtS, swkStD *rlwe.SwitchingKey) {
+	paramsSparse, _ := rlwe.NewParametersFromLiteral(rlwe.ParametersLiteral{
+		LogN: params.LogN(),
+		Q:    params.Q()[:1],
+		P:    params.P()[:1],
+	})
+
+	kgenSparse := rlwe.NewKeyGenerator(paramsSparse)
+	kgenDense := rlwe.NewKeyGenerator(params.Parameters)
+	skSparse := kgenSparse.GenSecretKeySparse(p.EphemeralSecretDensity)
+
+	return kgenDense.GenSwitchingKey(skDense, skSparse), kgenDense.GenSwitchingKey(skSparse, skDense)
 }
 
 // ShallowCopy creates a shallow copy of this Bootstrapper in which all the read-only data-structures are
@@ -72,7 +101,7 @@ func (btp *Bootstrapper) ShallowCopy() *Bootstrapper {
 }
 
 // CheckKeys checks if all the necessary keys are present in the instantiated Bootstrapper
-func (bb *bootstrapperBase) CheckKeys(btpKey rlwe.EvaluationKey) (err error) {
+func (bb *bootstrapperBase) CheckKeys(btpKey Key) (err error) {
 
 	if btpKey.Rlk == nil {
 		return fmt.Errorf("relinearization key is nil")
@@ -80,6 +109,14 @@ func (bb *bootstrapperBase) CheckKeys(btpKey rlwe.EvaluationKey) (err error) {
 
 	if btpKey.Rtks == nil {
 		return fmt.Errorf("rotation key is nil")
+	}
+
+	if btpKey.SwkDtS == nil {
+		return fmt.Errorf("switching key dense to sparse is nil")
+	}
+
+	if btpKey.SwkStD == nil {
+		return fmt.Errorf("switching key sparse to dense is nil")
 	}
 
 	rotKeyIndex := []int{}
@@ -102,7 +139,7 @@ func (bb *bootstrapperBase) CheckKeys(btpKey rlwe.EvaluationKey) (err error) {
 	return nil
 }
 
-func newBootstrapperBase(params ckks.Parameters, btpParams Parameters, btpKey rlwe.EvaluationKey) (bb *bootstrapperBase) {
+func newBootstrapperBase(params ckks.Parameters, btpParams Parameters, btpKey Key) (bb *bootstrapperBase) {
 	bb = new(bootstrapperBase)
 	bb.params = params
 	bb.Parameters = btpParams

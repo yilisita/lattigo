@@ -29,7 +29,7 @@ func ParamsToString(params ckks.Parameters, opname string) string {
 }
 
 func TestBootstrapParametersMarshalling(t *testing.T) {
-	bootstrapParams := DefaultParameters[0]
+	bootstrapParams := DefaultParametersDense[0].BootstrappingParams
 	data, err := bootstrapParams.MarshalBinary()
 	assert.Nil(t, err)
 
@@ -50,10 +50,9 @@ func TestBootstrap(t *testing.T) {
 		t.Skip("skipping bootstrapping tests (add -test-bootstrapping to run the bootstrapping tests)")
 	}
 
-	paramSet := 0
-
-	ckksParams := DefaultCKKSParameters[paramSet]
-	bootstrapParams := DefaultParameters[paramSet]
+	paramSet := DefaultParametersSparse[3]
+	ckksParams := paramSet.SchemeParams
+	btpParams := paramSet.BootstrappingParams
 
 	// Insecure params for fast testing only
 	if !*flagLongTest {
@@ -69,7 +68,7 @@ func TestBootstrap(t *testing.T) {
 	for _, testSet := range []func(params ckks.Parameters, btpParams Parameters, t *testing.T){
 		testbootstrap,
 	} {
-		testSet(params, bootstrapParams, t)
+		testSet(params, btpParams, t)
 		runtime.GC()
 	}
 
@@ -83,7 +82,7 @@ func TestBootstrap(t *testing.T) {
 	for _, testSet := range []func(params ckks.Parameters, btpParams Parameters, t *testing.T){
 		testbootstrap,
 	} {
-		testSet(params, bootstrapParams, t)
+		testSet(params, btpParams, t)
 		runtime.GC()
 	}
 }
@@ -93,7 +92,7 @@ func testbootstrap(params ckks.Parameters, btpParams Parameters, t *testing.T) {
 	t.Run(ParamsToString(params, "Bootstrapping/FullCircuit/"), func(t *testing.T) {
 
 		kgen := ckks.NewKeyGenerator(params)
-		sk := kgen.GenSecretKeySparse(btpParams.H)
+		sk := kgen.GenSecretKeySparse(params.N() >> 1)
 		rlk := kgen.GenRelinearizationKey(sk, 2)
 		encoder := ckks.NewEncoder(params)
 		encryptor := ckks.NewEncryptor(params, sk)
@@ -101,8 +100,9 @@ func testbootstrap(params ckks.Parameters, btpParams Parameters, t *testing.T) {
 
 		rotations := btpParams.RotationsForBootstrapping(params.LogN(), params.LogSlots())
 		rotkeys := kgen.GenRotationKeysForRotations(rotations, true, sk)
+		swkDtS, swkStD := btpParams.GenEncapsulationSwitchingKeys(params, sk)
 
-		btp, err := NewBootstrapper(params, btpParams, rlwe.EvaluationKey{Rlk: rlk, Rtks: rotkeys})
+		btp, err := NewBootstrapper(params, btpParams, Key{EvaluationKey: rlwe.EvaluationKey{Rlk: rlk, Rtks: rotkeys}, SwkDtS: swkDtS, SwkStD: swkStD})
 		if err != nil {
 			panic(err)
 		}

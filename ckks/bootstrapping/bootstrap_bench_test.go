@@ -14,10 +14,9 @@ func BenchmarkBootstrapp(b *testing.B) {
 	var err error
 	var btp *Bootstrapper
 
-	paramSet := 0
-
-	ckksParams := DefaultCKKSParameters[paramSet]
-	btpParams := DefaultParameters[paramSet]
+	paramSet := DefaultParametersDense[0]
+	ckksParams := paramSet.SchemeParams
+	btpParams := paramSet.BootstrappingParams
 
 	params, err := ckks.NewParametersFromLiteral(ckksParams)
 	if err != nil {
@@ -25,13 +24,14 @@ func BenchmarkBootstrapp(b *testing.B) {
 	}
 
 	kgen := ckks.NewKeyGenerator(params)
-	sk := kgen.GenSecretKeySparse(btpParams.H)
+	sk := kgen.GenSecretKeySparse(btpParams.MainSecretDensity)
 	rlk := kgen.GenRelinearizationKey(sk, 2)
 
 	rotations := btpParams.RotationsForBootstrapping(params.LogN(), params.LogSlots())
 	rotkeys := kgen.GenRotationKeysForRotations(rotations, true, sk)
+	swkDtS, swkStD := btpParams.GenEncapsulationSwitchingKeys(params, sk)
 
-	if btp, err = NewBootstrapper(params, btpParams, rlwe.EvaluationKey{Rlk: rlk, Rtks: rotkeys}); err != nil {
+	if btp, err = NewBootstrapper(params, btpParams, Key{EvaluationKey: rlwe.EvaluationKey{Rlk: rlk, Rtks: rotkeys}, SwkDtS: swkDtS, SwkStD: swkStD}); err != nil {
 		panic(err)
 	}
 
